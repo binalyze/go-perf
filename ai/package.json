@@ -1,0 +1,17 @@
+{
+  "name": "go-perf-ai",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI-powered interpretation of go-perf profile comparisons",
+  "main": "analyze.mjs",
+  "scripts": {
+    "analyze": "node analyze.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.26"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

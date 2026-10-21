@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>{{.ProductName}} Profiler Report - {{.RunID}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* ===== Design tokens (light) ===== */
+:root{
+  --brand-ink:#111111;
+  --brand-ink-glow:#4a4520;
+  --brand-yellow:#f8ed3f;
+  --brand-yellow-deep:#a69c00;
+  --brand-red:#b30000;
+  --brand-logo-red:#ff0000;
+  --brand-bar:#847f7f;
+  --brand-bar-soft:#cac3c3;
+  --bg:#f2f2f2;
+  --surface:#ffffff;
+  --surface-sunken:rgba(20,20,19,.08);
+  --surface-hover:rgba(20,20,19,.04);
+  --border:#e0dddd;
+  --border-grid:rgba(20,20,19,.22);
+  --text-strong:#000000;
+  --text:#22221f;
+  --text-muted:#5b5b5b;
+  --text-faint:#898781;
+  --link:#184f95;
+  --st-good:#0ca30c;
+  --st-warning:#fab219;
+  --st-serious:#ec835a;
+  --st-critical:#d03b3b;
+  --danger-bg:#fad6d6; --danger-fg:#8e2626; --danger-bd:#f09595;
+  --success-bg:#caeac7; --success-fg:#006300; --success-bd:#73cb6d;
+  --warning-bg:#f9dca4; --warning-fg:#734500; --warning-bd:#eda100;
+  --info-bg:#cde2fb; --info-fg:#184f95; --info-bd:#86b6ef;
+  --up:var(--danger-fg); --down:var(--success-fg);
+  --font-body:Inter, Arial, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-head:Manrope, Inter, Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-eyebrow:"Arial Narrow", "Roboto Condensed", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:"SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+  --radius-card:0; --radius-chip:5px; --radius-code:6px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:40px; --s8:48px; --s9:64px;
+  --shadow-sm:0 1px 2px 0 rgba(11,11,11,.06), 0 2px 8px 0 rgba(11,11,11,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0b0b0b; --surface:#151515; --surface-sunken:rgba(255,255,255,.06); --surface-hover:rgba(255,255,255,.04);
+    --border:rgba(255,255,255,.10); --border-grid:rgba(255,255,255,.18);
+    --text-strong:#ffffff; --text:#f0efec; --text-muted:#c3c2b7; --text-faint:#898781; --link:#6da7ec;
+    --brand-red:#ec7e7e;
+    --danger-bg:#3c0e0e; --danger-fg:#ec7e7e; --danger-bd:#641919;
+    --success-bg:#11260f; --success-fg:#55bf50; --success-bd:#074506;
+    --warning-bg:#311a00; --warning-fg:#db9300; --warning-bd:#512e00;
+    --info-bg:#032042; --info-fg:#6da7ec; --info-bd:#0d366b;
+    --brand-bar:#6d6b67; --brand-bar-soft:#383835;
+    --shadow-sm:0 1px 2px 0 rgba(0,0,0,.4), 0 2px 8px 0 rgba(0,0,0,.24);
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-body);font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);font-feature-settings:"tnum" 1,"cv11" 1;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
+code,.mono{font-family:var(--font-mono);font-size:.86em}
+:not(pre)>code{background:var(--surface-sunken);padding:.1em .4em;border-radius:var(--radius-chip)}
+.wrap{max-width:1200px;margin:0 auto;padding:0 var(--s6)}
+.hero{background:var(--brand-ink);background-image:radial-gradient(circle at 88% 18%, var(--brand-ink-glow) 0%, var(--brand-ink) 55%);color:#fff;padding:var(--s8) 0 var(--s6);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.brand{display:flex;align-items:center;gap:var(--s3);font-family:var(--font-eyebrow);font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase}
+.brand i{display:block;width:12px;height:12px;background:var(--brand-logo-red)}
+.hero .eyebrow{margin-top:var(--s8);color:var(--brand-yellow)}
+.hero h1{font-family:var(--font-head);font-weight:700;font-size:clamp(32px,5vw,56px);line-height:1.05;letter-spacing:-.02em;margin-top:var(--s4);max-width:22ch}
+.hero .sub{color:#c3c2b7;font-size:18px;margin-top:var(--s4)}
+.hero .sub code{background:rgba(255,255,255,.08);color:#fff}
+.hero-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin-top:var(--s5)}
+.hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:var(--s7);border-top:1px solid rgba(255,255,255,.14)}
+.hero-stats>div{padding:var(--s4) var(--s4) 0 0;min-width:0}
+.hero-stats .k{font-size:12px;color:#c3c2b7;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.hero-stats .v{font-family:var(--font-head);font-size:28px;font-weight:700;line-height:1.2;margin-top:var(--s1);overflow-wrap:anywhere}
+.hero-stats .v.hl{color:var(--brand-yellow)}
+.toc{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);margin-top:var(--s6);padding-top:var(--s4);border-top:1px solid rgba(255,255,255,.14);font-size:13px}
+.toc a{color:#c3c2b7;font-weight:500}
+.toc a:hover{color:#fff}
+main{padding:var(--s6) 0 var(--s8)}
+.section{background:var(--surface);border:1px solid var(--border);padding:var(--s7);margin-bottom:var(--s5)}
+.section.alt{background:transparent;border:0;padding:var(--s5) 0}
+.eyebrow{font-family:var(--font-eyebrow);font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--brand-red);line-height:1.4}
+.section h2{font-family:var(--font-head);font-weight:700;font-size:clamp(24px,3vw,32px);line-height:1.15;letter-spacing:-.01em;color:var(--text-strong);margin:var(--s2) 0 var(--s5)}
+.spark{color:var(--brand-red);vertical-align:middle}
+.trend-table td{vertical-align:middle}
+.finding{border:1px solid var(--border);padding:var(--s5);margin-bottom:var(--s4);background:var(--surface)}
+.finding h3{font-family:var(--font-head);font-size:18px;margin-bottom:var(--s2)}
+.fix-row{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s4)}
+.fix-btn,a.fix-btn{display:inline-block;border:1px solid var(--border);background:var(--surface-sunken);color:var(--text-strong);padding:.4em .8em;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
+.fix-btn:hover,a.fix-btn:hover{text-decoration:none;border-color:var(--brand-red)}
+h3.sub-h{font-family:var(--font-head);font-weight:700;font-size:19px;color:var(--text-strong);margin:var(--s6) 0 var(--s3)}
+h4{font-family:var(--font-head);font-weight:700;font-size:16px;color:var(--text-strong)}
+.lead{font-size:18px;line-height:1.5;color:var(--text-strong);margin-bottom:var(--s5)}
+.lead strong{font-weight:700}
+.muted{color:var(--text-muted)}
+.small{font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:var(--s4)}
+.metrics>*{min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);padding:var(--s5);min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.section .card{background:var(--surface)}
+.card.hl{background:var(--brand-yellow);border-color:var(--brand-yellow);color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.card.hl .label,.card.hl .note{color:#22221f}
+.label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:var(--s2)}
+.value{font-family:var(--font-head);font-weight:700;font-size:28px;line-height:1.15;color:var(--text-strong);letter-spacing:-.01em}
+.card.hl .value{color:#000}
+.value.md{font-size:20px}
+.value.sm{font-size:16px;font-family:var(--font-body);font-weight:600;letter-spacing:0}
+.value .unit{font-size:.55em;font-weight:600;color:var(--text-muted);margin-left:2px}
+.value.mono-v{font-family:var(--font-mono);font-size:15px;font-weight:500;letter-spacing:0;word-break:break-all;overflow-wrap:anywhere}
+.note{font-size:13px;color:var(--text-muted);margin-top:var(--s2)}
+.delta{font-size:13px;font-weight:600;margin-top:var(--s2);display:flex;align-items:center;gap:6px}
+.delta::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.delta.up{color:var(--up)} .delta.up::before{background:var(--st-critical)}
+.delta.down{color:var(--down)} .delta.down::before{background:var(--st-good)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--radius-chip);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1px solid transparent;line-height:1.5;white-space:nowrap;vertical-align:middle}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;flex:none}
+.badge-fail{background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-bd)} .badge-fail::before{background:var(--st-critical)}
+.badge-ok{background:var(--success-bg);color:var(--success-fg);border-color:var(--success-bd)} .badge-ok::before{background:var(--st-good)}
+.badge-warn{background:var(--warning-bg);color:var(--warning-fg);border-color:var(--warning-bd)} .badge-warn::before{background:var(--st-warning)}
+.hero .badge-fail{background:#3c0e0e;color:#ec7e7e;border-color:#641919}
+.callout{border:1px solid var(--border);border-left:4px solid var(--brand-bar);background:var(--surface);padding:var(--s4) var(--s5);margin-top:var(--s4);min-width:0;overflow-wrap:anywhere}
+.callout.info{border-left-color:var(--info-bd);background:var(--info-bg);color:var(--info-fg);border-color:var(--info-bd)}
+.callout.warn{border-left-color:var(--st-warning);background:var(--warning-bg);color:var(--warning-fg);border-color:var(--warning-bd)}
+.callout.danger{border-left-color:var(--st-critical);background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-bd)}
+.callout.neutral{border-left-color:var(--brand-bar);color:var(--text-muted);background:var(--surface-sunken);border-color:transparent}
+.callout strong{font-weight:700}
+.regress{background:var(--brand-ink);color:#f0efec;padding:var(--s6);border-left:4px solid var(--st-critical);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.regress .eyebrow{color:var(--brand-yellow)}
+.regress h3{font-family:var(--font-head);font-size:24px;font-weight:700;color:#fff;margin:var(--s2) 0 var(--s3);display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center}
+.regress p{color:#c3c2b7;margin-top:var(--s1)} .regress p strong{color:#fff}
+.regress .badge-fail{background:#3c0e0e;color:#ec7e7e;border-color:#641919}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:var(--s4);margin-top:var(--s5)}
+.cmp>div{border:1px solid rgba(255,255,255,.14);padding:var(--s4) var(--s5);min-width:0}
+.cmp .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#c3c2b7;font-weight:600}
+.cmp .v{font-family:var(--font-head);font-size:28px;font-weight:700;color:#fff;line-height:1.2;margin:var(--s1) 0}
+.cmp .t{font-size:13px;color:#c3c2b7}
+.cmp>div.hl{background:var(--brand-yellow);border-color:var(--brand-yellow)}
+.cmp>div.hl .k,.cmp>div.hl .t{color:#22221f} .cmp>div.hl .v{color:#000}
+.kv{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);border-top:1px solid var(--border);margin-top:var(--s5)}
+.kv>div{padding:var(--s3) 0;border-bottom:1px solid var(--border);min-width:0;overflow-wrap:anywhere}
+.kv .k{font-weight:700;color:var(--text-strong);padding-right:var(--s4)}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:var(--s3)}
+table.data{width:100%;border-collapse:collapse;font-size:14px;border:2px solid var(--border-grid)}
+table.data th,table.data td{padding:.5em .75em;border-bottom:1px solid var(--border-grid);border-right:1px solid var(--border-grid);text-align:left;vertical-align:baseline}
+table.data th{background:var(--surface-sunken);font-weight:600;color:var(--text-strong);font-size:13px;white-space:nowrap}
+table.data tbody tr:hover{background:var(--surface-hover)}
+.num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.c-fn{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.c-bar{width:160px}
+.bar{height:10px;background:var(--surface-sunken);position:relative}
+.bar span{display:block;height:100%;background:var(--brand-bar)}
+table.data:not(.diff) th.num,table.data:not(.diff) td.num{width:1%;padding-left:1.5em}
+table.diff{table-layout:fixed;min-width:620px}
+table.diff col.w-fn{width:auto} table.diff col.w-num{width:110px} table.diff col.w-pct{width:150px}
+table.diff .pkg{color:var(--text-faint)} table.diff .fn{color:var(--text-strong);font-weight:600}
+table.diff td.c-fn{padding-left:.6em;position:relative}
+table.diff .arrow{display:inline-block;width:1.4em;font-size:10px;font-family:var(--font-body)}
+tr.row-up td:first-child{box-shadow:inset 3px 0 0 var(--st-critical)} tr.row-up .arrow{color:var(--st-critical)}
+tr.row-down td:first-child{box-shadow:inset 3px 0 0 var(--st-good)} tr.row-down .arrow{color:var(--st-good)}
+span.up,td.up{color:var(--up);font-weight:600} span.down,td.down{color:var(--down);font-weight:600} .zero{color:var(--text-faint)}
+.tag{font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border:1px solid var(--border);padding:0 4px;border-radius:var(--radius-chip);margin-left:4px;white-space:nowrap}
+details{border:1px solid var(--border);margin-top:var(--s3);background:var(--surface)}
+details>summary{cursor:pointer;list-style:none;padding:var(--s3) var(--s4);font-weight:600;color:var(--text-strong);display:flex;align-items:center;gap:var(--s3)}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(-45deg);transition:transform .15s;flex:none}
+details[open]>summary::before{transform:rotate(45deg)}
+details>summary .eyebrow{margin-left:auto}
+details>.body{padding:0 var(--s4) var(--s4)}
+details .body>p{margin-top:var(--s1)}
+details h4{margin-top:var(--s5)}
+ul.files{list-style:none;display:flex;flex-wrap:wrap;gap:var(--s2)}
+ul.files li{font-family:var(--font-mono);font-size:12.5px;border:1px solid var(--border-grid);padding:2px 8px}
+ul.plain{margin:var(--s3) 0 0 var(--s5)} ul.plain li+li{margin-top:var(--s1)}
+.diffcard{border:1px solid var(--border);padding:var(--s5);margin-top:var(--s4);min-width:0}
+.diffcard h4{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+.btn{display:inline-flex;align-items:center;gap:var(--s2);padding:10px 18px;background:var(--brand-ink);color:#fff;font-weight:600;border:1px solid var(--brand-ink)}
+.btn:hover{text-decoration:none;background:#000}
+.btn::after{content:"→"}
+@media (prefers-color-scheme:dark){.btn{background:var(--brand-yellow);color:#000;border-color:var(--brand-yellow)}}
+pre{background:var(--brand-ink);color:#f0efec;padding:var(--s4) var(--s5);overflow-x:auto;font-family:var(--font-mono);font-size:13px;line-height:1.6;margin-top:var(--s3);border-radius:var(--radius-code)}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+footer{border-top:1px solid var(--border);padding:var(--s5) 0 var(--s8);color:var(--text-muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s2)}
+@media (max-width:900px){.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-stats>div{padding-bottom:var(--s3)}}
+@media (max-width:640px){
+  .wrap{padding:0 var(--s4)}
+  .section{padding:var(--s5) var(--s4)}
+  .hero{padding-top:var(--s6)}
+  .hero .eyebrow{margin-top:var(--s6)}
+  .hero-stats .v{font-size:22px}
+  .kv{grid-template-columns:minmax(0,1fr)}
+  .kv .k{border-bottom:0;padding-bottom:0}
+  .value{font-size:20px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
+  .card{padding:var(--s4) var(--s3)}
+  .value.md{font-size:15px}
+  .label{font-size:11px;letter-spacing:.04em}
+  .diffcard{padding:var(--s4) var(--s3)}
+  .regress{padding:var(--s5) var(--s4)}
+}
+@media (max-width:420px){
+  .metrics{grid-template-columns:minmax(0,1fr)}
+  .hero-stats{grid-template-columns:minmax(0,1fr)}
+  table.diff{min-width:0;table-layout:auto}
+  table.diff col.w-num{width:90px}
+  table.diff col.w-pct{width:100px}
+  .callout{padding:var(--s3);font-size:12px}
+  .value{font-size:18px}
+  .hero-stats .v{font-size:20px}
+}
+@media print{
+  @page{margin:12mm}
+  body{background:#fff;font-size:11pt}
+  .toc{display:none}
+  .section{border:1px solid #ccc;break-inside:avoid-page;page-break-inside:auto}
+  details::details-content{content-visibility:visible;display:block}
+  details>summary::before{display:none}
+  .table-scroll{overflow:visible}
+  table.diff{min-width:0}
+  tr{break-inside:avoid}
+  a{color:#000;text-decoration:underline}
+  .hero{padding:var(--s5) 0}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><i aria-hidden="true"></i>go-perf</div>
+    <div class="eyebrow">Profile comparison</div>
+    <h1>{{.ProductName}} Profiler Report</h1>
+    <p class="sub">Run ID: <code>{{.RunID}}</code></p>
+    {{if not .Success}}
+    <div class="hero-row">
+      <span class="badge badge-fail">✗ Failed</span>
+      <span class="small" style="color:#c3c2b7">{{.ErrorMessage}}</span>
+    </div>
+    {{else if .Comparison}}{{if .Comparison.HasRegression}}
+    <div class="hero-row">
+      <span class="badge badge-fail">✗ Regression</span>
+      <span class="small" style="color:#c3c2b7">Performance regression detected: {{printf "%.2f" .Comparison.DurationChangePercent}}% increase in total duration</span>
+    </div>
+    {{else if .Comparison.BaselineAvailable}}
+    <div class="hero-row">
+      <span class="badge badge-ok">✓ OK</span>
+      <span class="small" style="color:#c3c2b7">No regression detected</span>
+    </div>
+    {{end}}{{end}}
+    <div class="hero-stats" aria-label="Headline numbers">
+      <div><div class="k">Total duration</div><div class="v">{{humanDuration .DurationMS}}</div></div>
+      {{if .Comparison}}{{if .Comparison.BaselineAvailable}}<div><div class="k">Baseline duration</div><div class="v">{{humanDuration .Comparison.BaselineDurationMS}}</div></div>
+      <div><div class="k">Change</div><div class="v {{if .Comparison.HasRegression}}hl{{end}}">{{if gt .Comparison.DurationChangePercent 0.0}}+{{end}}{{printf "%.1f" .Comparison.DurationChangePercent}}%</div></div>{{end}}{{end}}
+      {{if .Insights}}{{if gt .Insights.Headlines.CPUCores 0.0}}<div><div class="k">CPU utilization</div><div class="v">{{printf "%.2f" .Insights.Headlines.CPUCores}} cores</div></div>{{end}}{{end}}
+    </div>
+    <nav class="toc" aria-label="Sections">
+      <a href="#summary">Executive summary</a>{{if .History}}<a href="#trends">Trends</a>{{end}}{{if .Findings}}<a href="#findings">Audit findings</a>{{end}}<a href="#run-info">Run info</a>{{if .Insights}}<a href="#insights">Profile insights</a>{{end}}<a href="#tests">Test summary</a>{{if .Comparison}}{{if .Comparison.BaselineAvailable}}<a href="#comparison">Performance comparison</a>{{if .Comparison.ProfileDiffs}}<a href="#diffs">Profile diffs</a>{{end}}{{end}}{{end}}<a href="#data">Profiling data</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- Executive Summary -->
+<section class="section" id="summary">
+  <div class="eyebrow">Summary</div>
+  <h2>Executive Summary</h2>
+  <div style="margin-bottom:var(--s4)">
+    {{if not .Success}}
+    <span class="badge badge-fail">✗ Failed</span>
+    {{else if .ExecutiveSummary.Verdict}}
+      {{if eq .ExecutiveSummary.Verdict "regression"}}
+      <span class="badge badge-fail">✗ Regression</span>
+      {{else if eq .ExecutiveSummary.Verdict "warning"}}
+      <span class="badge badge-warn">⚠ Warning</span>
+      {{else if eq .ExecutiveSummary.Verdict "ok"}}
+      <span class="badge badge-ok">✓ OK</span>
+      {{else}}
+      <span class="badge badge-ok">✓ Passed</span>
+      {{end}}
+    {{else if .Comparison}}{{if .Comparison.HasRegression}}
+    <span class="badge badge-fail">✗ Regression</span>
+    {{else if .Comparison.BaselineAvailable}}
+    <span class="badge badge-ok">✓ OK</span>
+    {{end}}{{else}}
+    <span class="badge badge-ok">✓ Passed</span>
+    {{end}}
+  </div>
+  {{if not .Success}}
+  <p class="lead"><strong>Test execution failed</strong></p>
+  <div class="callout danger">
+    <strong>Error:</strong> {{.ErrorMessage}}
+  </div>
+  {{else if .ExecutiveSummary.Headline}}
+  <p class="lead"><strong>{{.ExecutiveSummary.Headline}}</strong></p>
+  {{if .ExecutiveSummary.Confidence}}<p class="small" style="color:var(--text-muted)">Confidence: {{.ExecutiveSummary.Confidence}}</p>{{end}}
+  {{else if .Comparison}}{{if .Comparison.HasRegression}}
+  <p class="lead"><strong>Performance regression detected: {{printf "%.1f" .Comparison.DurationChangePercent}}% increase in total duration</strong></p>
+  {{else if .Comparison.BaselineAvailable}}
+  <p class="lead"><strong>No performance regression detected</strong></p>
+  {{else}}
+  <p class="lead"><strong>First run (no baseline)</strong></p>
+  {{end}}{{else}}
+  <p class="lead"><strong>Test completed successfully</strong></p>
+  {{end}}
+
+  {{if .ExecutiveSummary.AIUnavailableReason}}
+  <div class="callout info small">
+    <strong>Note:</strong> AI analysis was not performed. {{.ExecutiveSummary.AIUnavailableReason}}
+  </div>
+  {{end}}
+
+  {{if .ExecutiveSummary.KeyNumbers}}
+  <h3 class="sub-h" style="margin-top:0">Key Metrics</h3>
+  <div class="metrics">
+    {{range .ExecutiveSummary.KeyNumbers}}
+    <div class="card"><div class="label">{{.Label}}</div><div class="value">{{.Value}}</div></div>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .ExecutiveSummary.NotableChanges}}
+  <h3 class="sub-h" style="margin-top:var(--s6)">Notable Changes</h3>
+  <div class="table-scroll">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Function</th>
+        <th>Profile</th>
+        <th>Change</th>
+        <th>Likely Cause</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{range .ExecutiveSummary.NotableChanges}}
+      <tr>
+        <td class="c-fn">
+          {{.Function}}
+          {{if .SourceRef}}<br><span class="muted small">{{.SourceRef}}</span>{{end}}
+        </td>
+        <td><span class="tag">{{.Profile}}</span></td>
+        <td>{{.Change}}</td>
+        <td class="small">{{.LikelyCause}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{end}}
+
+  {{if .ExecutiveSummary.Recommendations}}
+  <h3 class="sub-h" style="margin-top:var(--s6)">Recommendations</h3>
+  <ul class="plain">
+    {{range .ExecutiveSummary.Recommendations}}
+    <li>{{.}}</li>
+    {{end}}
+  </ul>
+  {{end}}
+</section>
+
+{{if .History}}
+<section class="section" id="trends">
+  <div class="eyebrow">History</div>
+  <h2>Trends (last {{.History.RunCount}} runs)</h2>
+  {{if .History.EnvNote}}<p class="small" style="margin-bottom:var(--s4)">{{.History.EnvNote}}</p>{{end}}
+  {{if not .History.Metrics}}
+  <p class="muted">No earlier runs to compare.</p>
+  {{else}}
+  <div style="overflow-x:auto">
+  <table class="trend-table">
+    <thead><tr><th>Metric</th><th></th><th class="num">Current</th><th class="num">Median</th><th class="num">Spread</th><th>Label</th><th>Note</th></tr></thead>
+    <tbody>
+    {{range .History.Metrics}}
+    <tr>
+      <td>{{.Name}}</td>
+      <td>{{sparkline .}}</td>
+      <td class="num">{{printf "%.2f" .Current}} {{.Unit}}</td>
+      <td class="num">{{printf "%.2f" .Median}}</td>
+      <td class="num">{{printf "%.2f" .MAD}}</td>
+      <td><span class="{{labelClass .Label}}">{{.Label}}</span></td>
+      <td class="small">{{metricNote .Name}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{end}}
+</section>
+{{end}}
+
+{{if .Findings}}
+<section class="section" id="findings">
+  <div class="eyebrow">Audit</div>
+  <h2>Audit findings</h2>
+  {{range .Findings}}
+  <article class="finding" id="finding-{{.ID}}">
+    <h3><span class="{{if eq .Severity "high"}}badge badge-fail{{else if eq .Severity "medium"}}badge badge-warn{{else}}badge{{end}}">{{.Severity}}</span> {{.ID}}. {{.Title}}</h3>
+    {{if .Evidence}}<p>{{.Evidence}}</p>{{end}}
+    {{if .Location.File}}<p class="small mono">{{.Location.File}}{{if .Location.Line}}:{{.Location.Line}}{{end}} {{.Location.Function}}</p>{{end}}
+    {{if .Explanation}}<p style="margin-top:var(--s3)">{{.Explanation}}</p>{{end}}
+    {{if .FixPrompt}}
+    <details style="margin-top:var(--s3)"><summary>Fix prompt</summary><pre class="small" style="white-space:pre-wrap;margin-top:var(--s2)">{{.FixPrompt}}</pre></details>
+    <div class="fix-row">
+      {{if .CursorURL}}<a class="fix-btn" href="{{.CursorURL}}">Fix in Cursor</a><a class="fix-btn" href="{{.CursorWebURL}}">Open in browser</a>{{end}}
+      {{if .PromptTooLong}}<span class="small muted">Prompt is too long for a deeplink.</span>{{end}}
+      <button type="button" class="fix-btn" data-copy="{{.FixPrompt}}">Copy prompt</button>
+      <button type="button" class="fix-btn" data-copy="{{.FixPrompt}}" data-copied="Copied. Paste it into Claude Code." title="Claude Code has no link that accepts a prompt, so this copies it.">Open in Claude Code</button>
+    </div>
+    {{end}}
+  </article>
+  {{end}}
+</section>
+{{end}}
+
+<!-- Run Info -->
+<section class="section" id="run-info">
+  <div class="eyebrow">Run</div>
+  <h2>Run Info</h2>
+  <div class="metrics">
+    <div class="card"><div class="label">Run ID</div><div class="value mono-v">{{.RunID}}</div></div>
+    <div class="card"><div class="label">Branch</div><div class="value sm">{{.ProductVersion}}</div></div>
+    <div class="card"><div class="label">Commit</div><div class="value mono-v"><code title="{{if .ProductCommit}}{{.ProductCommit}}{{else}}N/A{{end}}" style="background:none;padding:0;font-size:inherit">{{if .ProductCommit}}{{slice .ProductCommit 0 12}}{{else}}N/A{{end}}</code></div><div class="note">short SHA - hover for full</div></div>
+    <div class="card"><div class="label">Timestamp</div><div class="value sm">{{.Timestamp}}</div></div>
+    {{if .AgentName}}<div class="card"><div class="label">Agent</div><div class="value sm">{{.AgentName}}</div></div>{{end}}
+    {{if gt .CPUCores 0}}<div class="card"><div class="label">CPU Cores</div><div class="value">{{.CPUCores}}</div></div>{{end}}
+  </div>
+  {{if .ProfileFiles}}
+  <details>
+    <summary>Profile Files in perf-data.zip</summary>
+    <div class="body"><ul class="files">{{range .ProfileFiles}}<li>{{.}}</li>{{end}}</ul></div>
+  </details>
+  {{end}}
+  {{if .BuildURL}}
+  <p style="margin-top:var(--s4)"><a href="{{.BuildURL}}" target="_blank" rel="noopener">Open linked run →</a></p>
+  {{end}}
+</section>
+
+<!-- Profile Insights -->
+{{if .Insights}}
+<section class="section" id="insights">
+  <div class="eyebrow">Profiles</div>
+  <h2>Profile Insights</h2>
+  <div class="metrics">
+    {{with .Insights.Headlines}}
+    {{if gt .CPUTime 0}}<div class="card"><div class="label">CPU Time</div><div class="value" title="{{.CPUTime}}ns">{{formatNanos .CPUTime}}</div>{{if .HasBaseline}}<div class="delta {{if gt .CPUTimeDelta 0}}up{{else}}down{{end}}">{{if gt .CPUTimeDelta 0}}+{{end}}{{formatNanos .CPUTimeDelta}} delta</div>{{end}}</div>{{end}}
+    {{if gt .CPUCores 0.0}}<div class="card"><div class="label">Avg CPU Cores</div><div class="value">{{printf "%.2f" .CPUCores}}</div>{{if .HasBaseline}}<div class="delta {{if gt .CPUCoresDelta 0.0}}up{{else}}down{{end}}">{{if gt .CPUCoresDelta 0.0}}+{{end}}{{printf "%.2f" .CPUCoresDelta}} cores</div>{{end}}</div>{{end}}
+    {{if gt .HeapInUseBytes 0}}<div class="card"><div class="label">Heap In-Use</div><div class="value" title="Heap in-use at snapshot time (not a peak)">{{printf "%.2f" (divf .HeapInUseBytes 1048576)}} <span class="unit">MB</span></div>{{if .HasBaseline}}<div class="delta" style="color:var(--text-muted)">{{if gt .HeapInUseBytesDelta 0}}+{{end}}{{printf "%.2f" (divf .HeapInUseBytesDelta 1048576)}} MB</div>{{end}}</div>{{end}}
+    {{if gt .TotalAllocBytes 0}}<div class="card"><div class="label">Total Allocated</div><div class="value">{{printf "%.2f" (divf .TotalAllocBytes 1073741824)}} <span class="unit">GB</span></div>{{if .HasBaseline}}<div class="delta {{if gt .TotalAllocBytesDelta 0}}up{{else}}down{{end}}">{{if gt .TotalAllocBytesDelta 0}}+{{end}}{{printf "%.2f" (divf .TotalAllocBytesDelta 1048576)}} MB</div>{{end}}</div>{{end}}
+    {{if gt .AllocObjects 0}}<div class="card"><div class="label">Alloc Objects</div><div class="value md">{{printf "%d" .AllocObjects}}</div>{{if .HasBaseline}}<div class="delta {{if gt .AllocObjectsDelta 0}}up{{else}}down{{end}}">{{if gt .AllocObjectsDelta 0}}+{{end}}{{printf "%d" .AllocObjectsDelta}}</div>{{end}}</div>{{end}}
+    {{if gt .GoroutineCount 0}}<div class="card"><div class="label">Goroutines</div><div class="value">{{.GoroutineCount}}</div>{{if .HasBaseline}}<div class="delta" style="color:var(--text-muted)">{{if gt .GoroutineCountDelta 0}}+{{end}}{{.GoroutineCountDelta}}</div>{{end}}</div>{{end}}
+    {{end}}
+  </div>
+  {{with $.Insights.Headlines}}{{if .HasBaseline}}
+  <div class="callout neutral small">
+    <span class="tag">info</span> Heap and goroutine figures are end-of-test snapshots with ±25-40% variance between identical runs. Treat changes as informational context.
+  </div>
+  {{end}}{{end}}
+
+  {{if $.Insights.CPU}}
+  <details style="margin-top:var(--s5)">
+    <summary>CPU Profile Details <span class="eyebrow">CPU</span></summary>
+    <div class="body">
+      {{with $.Insights.Headlines}}<p><strong>CPU Time:</strong> {{formatNanos .CPUTime}} | <strong>Utilization:</strong> {{printf "%.2f" .CPUCores}} cores</p>{{end}}
+      {{if $.Insights.CPU.TopFlat}}
+      <h4>Top 10 Functions by Flat Time</h4>
+      <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Function</th><th class="num">Flat</th><th class="num">Flat %</th><th class="num">Cumulative</th><th class="num">Cum %</th></tr></thead>
+        <tbody>
+        {{range $.Insights.CPU.TopFlat}}
+        <tr><td class="c-fn">{{funcWithTitle .Function}}{{findingBadge .Function}}</td><td class="num">{{formatNanos .Flat}}</td><td class="num">{{printf "%.2f" .FlatPercent}}%</td><td class="num">{{formatNanos .Cum}}</td><td class="num">{{printf "%.2f" .CumPercent}}%</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+      </div>
+      {{end}}
+      {{if .Insights.CPU.TopPackages}}
+      <h4 style="margin-top:var(--s5)">Top 10 Packages by CPU Time</h4>
+      <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Package</th><th class="num">Flat</th><th class="num">Flat %</th></tr></thead>
+        <tbody>
+        {{range $.Insights.CPU.TopPackages}}
+        <tr><td class="c-fn">{{.Package}}</td><td class="num">{{formatNanos .Flat}}</td><td class="num">{{printf "%.2f" .FlatPercent}}%</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+      </div>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+
+  {{if $.Insights.Memory}}
+  <details>
+    <summary>Memory Profile Details <span class="eyebrow">Heap</span></summary>
+    <div class="body">
+      {{with $.Insights.Memory}}<p><strong>In-Use:</strong> {{printf "%.2f" (divf .InUseBytes 1048576)}} MB ({{printf "%d" .InUseObjects}} objects)</p>{{end}}
+      {{if $.Insights.Memory.TopInUseSpace}}
+      <h4>Top 10 Functions by In-Use Space</h4>
+      <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Function</th><th class="num">In-Use</th><th class="num">%</th></tr></thead>
+        <tbody>
+        {{range $.Insights.Memory.TopInUseSpace}}
+        <tr><td class="c-fn">{{funcWithTitle .Function}}{{findingBadge .Function}}</td><td class="num">{{formatBytes .Flat}}</td><td class="num">{{printf "%.2f" .FlatPercent}}%</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+      </div>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+
+  {{if $.Insights.Allocs}}
+  <details>
+    <summary>Allocations Profile Details <span class="eyebrow">Allocs</span></summary>
+    <div class="body">
+      {{with $.Insights.Allocs}}<p><strong>Total Allocated:</strong> {{printf "%.2f" (divf .AllocBytes 1073741824)}} GB ({{printf "%d" .AllocObjects}} objects)</p>{{end}}
+      {{if $.Insights.Allocs.TopAllocSpace}}
+      <h4>Top 10 Functions by Alloc Space</h4>
+      <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Function</th><th class="num">Allocated</th><th class="num">%</th></tr></thead>
+        <tbody>
+        {{range $.Insights.Allocs.TopAllocSpace}}
+        <tr><td class="c-fn">{{funcWithTitle .Function}}{{findingBadge .Function}}</td><td class="num">{{formatBytes .Flat}}</td><td class="num">{{printf "%.2f" .FlatPercent}}%</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+      </div>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+
+  {{if $.Insights.Goroutines}}
+  <details>
+    <summary>Goroutines Profile Details <span class="eyebrow">Goroutine</span></summary>
+    <div class="body">
+      {{with $.Insights.Goroutines}}<p><strong>Total Count:</strong> {{.TotalCount}}</p>{{end}}
+      {{if $.Insights.Goroutines.TopFunctions}}
+      <h4>Top 10 Functions by Goroutine Count</h4>
+      <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Function</th><th class="num">Count</th><th class="num">%</th></tr></thead>
+        <tbody>
+        {{range $.Insights.Goroutines.TopFunctions}}
+        <tr><td class="c-fn">{{funcWithTitle .Function}}{{findingBadge .Function}}</td><td class="num">{{.Count}}</td><td class="num">{{printf "%.2f" .Percent}}%</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+      </div>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+</section>
+{{end}}
+
+<!-- Test Summary -->
+<section class="section" id="tests">
+  <div class="eyebrow">Tests</div>
+  <h2>Test Summary</h2>
+  <div class="metrics">
+    <div class="card"><div class="label">Status</div><span class="badge {{if .Success}}badge-ok{{else}}badge-fail{{end}}">{{if .Success}}✓ Passed{{else}}✗ Failed{{end}}</span></div>
+    <div class="card"><div class="label">Duration</div><div class="value" title="{{.DurationMS}}ms">{{humanDuration .DurationMS}}</div></div>
+    <div class="card"><div class="label">Profiles Collected</div><span class="badge {{if .ProfilesCollected}}badge-ok{{else}}badge-fail{{end}}">{{if .ProfilesCollected}}✓ Yes{{else}}✗ No{{end}}</span></div>
+    {{if gt .CPUProfileDurationMS 0}}<div class="card"><div class="label">CPU Profile Duration</div><div class="value" title="{{.CPUProfileDurationMS}}ms">{{humanDuration .CPUProfileDurationMS}}</div></div>{{end}}
+  </div>
+  <div class="kv">
+    <div class="k">Timestamp</div><div>{{.Timestamp}}</div>
+    <div class="k">Test Case</div><div>{{.TestCase}}</div>
+    <div class="k">{{.ProductName}} Version</div><div>{{.ProductVersion}}</div>
+  </div>
+</section>
+
+<!-- Performance Comparison -->
+{{if .Comparison}}{{if .Comparison.BaselineAvailable}}
+<section class="section" id="comparison">
+  <div class="eyebrow">Baseline comparison</div>
+  <h2>Performance Comparison</h2>
+
+  {{if .Comparison.BaselineBuildID}}
+  <div class="callout info" style="margin-top:0">
+    <strong>📊 Baseline:</strong> Comparing against build {{.Comparison.BaselineBuildID}}{{if .Comparison.BaselineAgentName}} (agent: {{.Comparison.BaselineAgentName}}){{end}}. Current run on agent: {{.Comparison.CurrentAgentName}}.
+    {{if and .Comparison.BaselineAgentName .Comparison.CurrentAgentName (ne .Comparison.BaselineAgentName .Comparison.CurrentAgentName) (ne .Comparison.BaselineAgentName "unknown") (ne .Comparison.CurrentAgentName "unknown")}}
+    <br><em>ℹ️ Note: Baseline ran on a different agent ("{{.Comparison.BaselineAgentName}}" vs "{{.Comparison.CurrentAgentName}}").</em>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .Comparison.HasRegression}}
+  <div class="regress">
+    <div class="eyebrow">Threshold {{printf "%.1f" .Comparison.RegressionThreshold}} percent</div>
+    <h3>Regression Detected <span class="badge badge-fail">⚠ Regression</span></h3>
+    <p>Performance degraded compared to baseline (threshold: {{printf "%.1f" .Comparison.RegressionThreshold}}%)</p>
+    {{if .Comparison.HasDurationRegression}}<p><strong>Duration Regression:</strong> {{printf "%.2f" .Comparison.DurationChangePercent}}% increase</p>{{end}}
+    {{if .Comparison.HasProfileRegression}}<p><strong>Profile Regression:</strong> Significant increases in profiling data</p>{{end}}
+    <div class="cmp">
+      <div><div class="k">Baseline</div><div class="v" title="{{.Comparison.BaselineDurationMS}}ms">{{humanDuration .Comparison.BaselineDurationMS}}</div><div class="t">{{.Comparison.BaselineTimestamp}}</div></div>
+      <div><div class="k">Current</div><div class="v" title="{{.Comparison.CurrentDurationMS}}ms">{{humanDuration .Comparison.CurrentDurationMS}}</div><div class="t">{{.Comparison.CurrentTimestamp}}</div></div>
+      <div class="hl"><div class="k">Change</div><div class="v">{{if gt .Comparison.DurationChangePercent 0.0}}+{{end}}{{printf "%.2f" .Comparison.DurationChangePercent}}%</div><div class="t" title="{{.Comparison.DurationChangeMS}}ms">{{if gt .Comparison.DurationChangeMS 0}}+{{end}}{{humanDuration .Comparison.DurationChangeMS}} difference</div></div>
+    </div>
+  </div>
+  <div class="callout warn"><strong>Action Required:</strong> Investigate performance degradation. Review pprof profiles and diffs below for bottlenecks.</div>
+  {{else}}
+  <div class="metrics">
+    <div class="card"><div class="label">Baseline Duration</div><div class="value">{{humanDuration .Comparison.BaselineDurationMS}}</div><div class="note">{{.Comparison.BaselineTimestamp}}</div></div>
+    <div class="card"><div class="label">Current Duration</div><div class="value">{{humanDuration .Comparison.CurrentDurationMS}}</div><div class="note">{{.Comparison.CurrentTimestamp}}</div></div>
+    <div class="card {{if and .Comparison.DurationChangePercent (lt .Comparison.DurationChangePercent 0.0)}}hl{{end}}"><div class="label">Change</div><div class="value">{{if gt .Comparison.DurationChangePercent 0.0}}+{{end}}{{printf "%.2f" .Comparison.DurationChangePercent}}%</div><div class="note">{{if gt .Comparison.DurationChangeMS 0}}+{{end}}{{humanDuration .Comparison.DurationChangeMS}}</div></div>
+    <div class="card"><div class="label">Threshold</div><div class="value sm">{{printf "%.1f" .Comparison.RegressionThreshold}}%</div></div>
+  </div>
+  {{if gt .Comparison.AvgCoresDelta 0.0}}
+  <div class="metrics" style="margin-top:var(--s4)">
+    <div class="card"><div class="label">Baseline CPU Cores</div><div class="value">{{printf "%.2f" .Comparison.BaselineAvgCores}}</div></div>
+    <div class="card"><div class="label">Current CPU Cores</div><div class="value">{{printf "%.2f" .Comparison.CurrentAvgCores}}</div></div>
+    <div class="card"><div class="label">Cores Change</div><div class="value">{{if gt .Comparison.AvgCoresDelta 0.0}}+{{end}}{{printf "%.2f" .Comparison.AvgCoresDelta}}</div><div class="note">{{if gt .Comparison.AvgCoresChangePercent 0.0}}+{{end}}{{printf "%.2f" .Comparison.AvgCoresChangePercent}}%</div></div>
+  </div>
+  {{end}}
+  <div class="callout info"><strong>✓ No Regression:</strong> Performance is within acceptable threshold.</div>
+  {{end}}
+</section>
+
+<!-- Profile Diffs -->
+{{if .Comparison.ProfileDiffs}}
+<section class="section" id="diffs">
+  <div class="eyebrow">Baseline comparison</div>
+  <h2>Profile Diffs</h2>
+
+  {{range .Comparison.ProfileDiffs}}
+  <div class="diffcard">
+    <h4>{{.ProfileType | toUpper}} Profile 
+      {{if or (eq .ProfileType "heap") (eq .ProfileType "goroutine")}}<span class="badge" style="background:var(--info-bg);color:var(--info-fg);border-color:var(--info-bd)">ℹ Informational</span>
+      {{else}}{{if .HasRegression}}<span class="badge badge-fail">⚠ Regression</span>
+      {{else}}<span class="badge badge-ok">✓ OK</span>{{end}}{{end}}
+    </h4>
+    <div class="metrics">
+      <div class="card">
+        <div class="label">Total Sample Change</div>
+        <div class="value" style="color:{{if gt .TotalDelta.ChangePercent 0.0}}var(--up){{else}}var(--down){{end}}">{{if gt .TotalDelta.ChangePercent 0.0}}+{{end}}{{printf "%.2f" .TotalDelta.ChangePercent}}<span class="unit">%</span></div>
+        <div class="note">{{formatSampleValue .TotalDelta.BaselineTotal .TotalDelta.Unit}} → {{formatSampleValue .TotalDelta.CurrentTotal .TotalDelta.Unit}} ({{formatSampleDelta .TotalDelta.Delta .TotalDelta.Unit}})</div>
+      </div>
+    </div>
+
+    {{if .TopIncrease}}
+    <h4 style="margin-top:var(--s5);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--up)">Top Increases</h4>
+    <div class="table-scroll">
+    <table class="data diff">
+      <colgroup><col class="w-fn"><col class="w-num"><col class="w-pct"></colgroup>
+      <thead><tr><th>Function</th><th class="num">Delta {{.TotalDelta.Unit}}</th><th class="num">Change %</th></tr></thead>
+      <tbody>
+      {{range .TopIncrease}}
+      <tr class="row-up">
+        <td class="c-fn"><span class="arrow">▲</span>{{funcWithTitle .Function}}{{findingBadge .Function}}</td>
+        <td class="num up">{{formatSampleDelta .CumDelta .Unit}}</td>
+        <td class="num up">+{{formatChangePercent .ChangePercent}}%</td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{end}}
+
+    {{if .TopDecrease}}
+    <h4 style="margin-top:var(--s5);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--down)">Top Decreases</h4>
+    <div class="table-scroll">
+    <table class="data diff">
+      <colgroup><col class="w-fn"><col class="w-num"><col class="w-pct"></colgroup>
+      <thead><tr><th>Function</th><th class="num">Delta {{.TotalDelta.Unit}}</th><th class="num">Change %</th></tr></thead>
+      <tbody>
+      {{range .TopDecrease}}
+      <tr class="row-down">
+        <td class="c-fn"><span class="arrow">▼</span>{{funcWithTitle .Function}}{{findingBadge .Function}}</td>
+        <td class="num down">{{formatSampleDelta .CumDelta .Unit}}</td>
+        <td class="num down">{{if lt .ChangePercent 0.0}}{{formatChangePercent .ChangePercent}}{{else}}-{{formatChangePercent .ChangePercent}}{{end}}%</td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+</section>
+{{end}}
+{{end}}{{end}}
+
+<!-- Profiling Data -->
+<section class="section" id="data">
+  <div class="eyebrow">Artifacts</div>
+  <h2>Profiling Data</h2>
+  <div class="callout info" style="margin-top:0"><strong>Profiles Available:</strong> Download the <code>perf-data.zip</code> archive from the <strong>perf-analysis</strong> artifact to analyze with <code>go tool pprof</code>.</div>
+  {{if .ProfileFiles}}
+  <p style="margin-top:var(--s4)">The perf-data.zip archive contains (flat layout):</p>
+  <div class="kv" style="margin-top:var(--s3)">
+    {{range .ProfileFiles}}
+    <div class="k mono">{{.}}</div><div>{{if contains . "cpu"}}CPU profile{{else if contains . "heap"}}Heap memory allocation profile{{else if contains . "allocs"}}Memory allocations profile{{else if contains . "goroutine"}}Goroutine profile{{else}}Profile data{{end}}</div>
+    {{end}}
+  </div>
+  {{end}}
+  {{if .BuildURL}}
+  <p style="margin-top:var(--s5)">Download <code>perf-data.zip</code> from the <strong>perf-analysis</strong> artifact to access profiles and metadata.</p>
+  <p style="margin-top:var(--s3)"><a class="btn" href="{{.BuildURL}}" target="_blank" rel="noopener">Open linked run</a></p>
+  {{end}}
+
+  <h3 class="sub-h">Analysis Commands</h3>
+<pre><code><span style="color:var(--text-faint)"># Extract perf-data.zip</span>
+unzip perf-data.zip
+
+<span style="color:var(--text-faint)"># Analyze CPU profile</span>
+go tool pprof -http=:8080 cpu.pprof
+
+<span style="color:var(--text-faint)"># Analyze heap allocations</span>
+go tool pprof -http=:8080 heap.pprof
+
+<span style="color:var(--text-faint)"># Analyze allocation counts</span>
+go tool pprof -http=:8080 allocs.pprof
+
+<span style="color:var(--text-faint)"># View goroutine profile</span>
+go tool pprof -http=:8080 goroutine.pprof</code></pre>
+</section>
+
+</div>
+</main>
+
+<!-- Diagnostics Section -->
+<section class="section" id="diagnostics">
+  <details style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s4);background:var(--bg-alt);margin-top:var(--s6)">
+    <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--text-strong);user-select:none">
+      Diagnostics
+    </summary>
+    <div style="margin-top:var(--s4);font-size:13px;line-height:1.8;color:var(--text-body)">
+      {{with .Diagnostics}}
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:var(--s2) 0;color:var(--text-muted);width:200px">Baseline</td><td style="padding:var(--s2) 0">{{if .BaselineBuild}}{{.BaselineBuild}}{{if .BaselineAgent}} (Agent: {{.BaselineAgent}}){{end}}{{else}}<span style="color:var(--text-faint)">No baseline</span>{{end}}</td></tr>
+        {{if .BaselineSkipped}}<tr><td style="padding:var(--s2) 0;color:var(--text-muted)">Baseline Skipped</td><td style="padding:var(--s2) 0"><ul style="margin:0;padding-left:var(--s5)">{{range .BaselineSkipped}}<li style="font-size:12px">{{.}}</li>{{end}}</ul></td></tr>{{end}}
+        <tr><td style="padding:var(--s2) 0;color:var(--text-muted)">Artifact Format</td><td style="padding:var(--s2) 0">perf-data.zip (metadata.json + *.pprof profiles)</td></tr>
+        {{if .CPUProfileError}}<tr><td style="padding:var(--s2) 0;color:var(--text-muted)">CPU Profile Error</td><td style="padding:var(--s2) 0;color:var(--fail)">{{.CPUProfileError}}</td></tr>{{end}}
+        {{if .HeapProfileError}}<tr><td style="padding:var(--s2) 0;color:var(--text-muted)">Heap Profile Error</td><td style="padding:var(--s2) 0;color:var(--fail)">{{.HeapProfileError}}</td></tr>{{end}}
+        {{if .AllocsProfileError}}<tr><td style="padding:var(--s2) 0;color:var(--text-muted)">Allocs Profile Error</td><td style="padding:var(--s2) 0;color:var(--fail)">{{.AllocsProfileError}}</td></tr>{{end}}
+        {{if .GoroutineProfileError}}<tr><td style="padding:var(--s2) 0;color:var(--text-muted)">Goroutine Profile Error</td><td style="padding:var(--s2) 0;color:var(--fail)">{{.GoroutineProfileError}}</td></tr>{{end}}
+        <tr><td style="padding:var(--s2) 0;color:var(--text-muted)">AI Analysis</td><td style="padding:var(--s2) 0">{{.AIStatus}}{{if .AIUnavailableReason}} ({{.AIUnavailableReason}}){{end}}</td></tr>
+      </table>
+      {{end}}
+    </div>
+  </details>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Generated by go-perf</span>
+  </div>
+</footer>
+<script>
+document.querySelectorAll("[data-copy]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var text = btn.getAttribute("data-copy") || "";
+    var done = btn.getAttribute("data-copied") || "Copied";
+    var original = btn.textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = done;
+      setTimeout(function () { btn.textContent = original; }, 2000);
+    });
+  });
+});
+</script>
+</body>
+</html>
