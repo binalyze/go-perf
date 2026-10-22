@@ -404,7 +404,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(-
   <h2>Audit findings</h2>
   {{range .Findings}}
   <article class="finding" id="finding-{{.ID}}">
-    <h3><span class="{{if eq .Severity "high"}}badge badge-fail{{else if eq .Severity "medium"}}badge badge-warn{{else}}badge{{end}}">{{.Severity}}</span> {{.ID}}. {{.Title}}</h3>
+    <h3><span class="{{if eq .Class "regression"}}badge badge-fail{{else if eq .Class "improvement"}}badge badge-warn{{else}}badge{{end}}">{{.Class}}</span> <span class="{{if eq .Severity "high"}}badge badge-fail{{else if eq .Severity "medium"}}badge badge-warn{{else}}badge{{end}}">{{.Severity}}</span> {{.ID}}. {{.Title}}</h3>
     {{if .Evidence}}<p>{{.Evidence}}</p>{{end}}
     {{if .Location.File}}<p class="small mono">{{.Location.File}}{{if .Location.Line}}:{{.Location.Line}}{{end}} {{.Location.Function}}</p>{{end}}
     {{if .Explanation}}<p style="margin-top:var(--s3)">{{.Explanation}}</p>{{end}}

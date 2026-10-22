@@ -16,6 +16,7 @@ const IN_FLIGHT = /run\.(wait|stream|conversation)|\/stream/i;
 const VERDICTS = new Set(['ok', 'warning', 'regression']);
 const CONFIDENCE = new Set(['high', 'medium', 'low']);
 const SEVERITIES = new Set(['high', 'medium', 'low']);
+const CLASSES = new Set(['regression', 'improvement', 'expected']);
 
 export function isTransientStartupError(error) {
   if (!error || typeof error !== 'object') return false;
@@ -164,8 +165,20 @@ export function validateAnalysis(analysis) {
     if (!SEVERITIES.has(finding.severity)) {
       throw new Error(`finding ${finding.id} has severity ${finding.severity}`);
     }
-    if (!finding.location || typeof finding.location !== 'object') {
-      finding.location = {};
+    if (!CLASSES.has(finding.class)) {
+      throw new Error(`finding ${finding.id} has class ${finding.class}`);
+    }
+    if (!finding.location || typeof finding.location !== 'object' || !finding.location.file) {
+      throw new Error(`finding ${finding.id} is missing the source file that was validated`);
+    }
+    const fix = typeof finding.fix_prompt === 'string' ? finding.fix_prompt.trim() : '';
+    if (finding.class === 'expected') {
+      if (fix) {
+        throw new Error(`finding ${finding.id} is expected and must not include a fix prompt`);
+      }
+      finding.fix_prompt = '';
+    } else if (!fix) {
+      throw new Error(`finding ${finding.id} needs a fix prompt`);
     }
   }
   return analysis;

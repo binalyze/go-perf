@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const maxAIInputSizeBytes = 60 * 1024
@@ -227,6 +228,21 @@ func validateAIAnalysis(analysis *AIAnalysis) error {
 		default:
 			return fmt.Errorf("finding %s has severity %q", finding.ID, finding.Severity)
 		}
+		switch finding.Class {
+		case "regression", "improvement", "expected":
+		default:
+			return fmt.Errorf("finding %s has class %q", finding.ID, finding.Class)
+		}
+		if strings.TrimSpace(finding.Location.File) == "" {
+			return fmt.Errorf("finding %s is missing the source file that was validated", finding.ID)
+		}
+		if finding.Class == "expected" {
+			if strings.TrimSpace(finding.FixPrompt) != "" {
+				return fmt.Errorf("finding %s is expected and must not include a fix prompt", finding.ID)
+			}
+		} else if strings.TrimSpace(finding.FixPrompt) == "" {
+			return fmt.Errorf("finding %s needs a fix prompt", finding.ID)
+		}
 	}
 	if analysis.Findings == nil {
 		analysis.Findings = []AIFinding{}
@@ -334,6 +350,7 @@ type AIMetricNote struct {
 
 type AIFinding struct {
 	ID          string     `json:"id"`
+	Class       string     `json:"class"`
 	Severity    string     `json:"severity"`
 	Title       string     `json:"title"`
 	Evidence    string     `json:"evidence,omitempty"`

@@ -45,6 +45,7 @@ test('validateAnalysis accepts a finding and rejects a bad verdict', () => {
     confidence: 'medium',
     findings: [{
       id: 'F1',
+      class: 'improvement',
       severity: 'medium',
       title: 'Hot path',
       location: { file: 'a.go', line: 10, function: 'pkg.F' },
@@ -53,6 +54,17 @@ test('validateAnalysis accepts a finding and rejects a bad verdict', () => {
   });
   assert.strictEqual(analysis.findings[0].id, 'F1');
   assert.throws(() => validateAnalysis({ verdict: 'maybe' }), /verdict/);
+  assert.throws(() => validateAnalysis({
+    verdict: 'warning',
+    findings: [{
+      id: 'F2',
+      class: 'expected',
+      severity: 'low',
+      title: 'Parser',
+      location: { file: 'parse.go', line: 3 },
+      fix_prompt: 'Rewrite the parser',
+    }],
+  }), /must not include a fix prompt/);
 });
 
 test('cursorAgentOptions requires an API key and records the cloud env', () => {
