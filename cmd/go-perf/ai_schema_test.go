@@ -14,10 +14,35 @@ func TestValidateAIAnalysis(t *testing.T) {
 
 	analysis := &AIAnalysis{
 		Verdict: "regression", Headline: "slower", Confidence: "high",
-		Findings: []AIFinding{{ID: "F1", Severity: "high", Title: "allocs"}},
+		Findings: []AIFinding{{
+			ID: "F1", Class: "regression", Severity: "high", Title: "allocs",
+			FixPrompt: "Reuse the buffer in alloc.go.",
+			Location:  AILocation{File: "alloc.go", Line: 12},
+		}},
 	}
 	if err := validateAIAnalysis(analysis); err != nil {
 		t.Fatalf("validate: %v", err)
+	}
+
+	expected := &AIAnalysis{
+		Verdict: "warning", Confidence: "low",
+		Findings: []AIFinding{{
+			ID: "F2", Class: "expected", Severity: "low", Title: "parser",
+			Location: AILocation{File: "parse.go", Line: 4},
+		}},
+	}
+	if err := validateAIAnalysis(expected); err != nil {
+		t.Fatalf("expected finding: %v", err)
+	}
+	improvement := &AIAnalysis{
+		Verdict: "warning", Confidence: "medium",
+		Findings: []AIFinding{{
+			ID: "F3", Class: "improvement", Severity: "medium", Title: "cache",
+			Location: AILocation{File: "cache.go", Line: 8},
+		}},
+	}
+	if err := validateAIAnalysis(improvement); err == nil || !strings.Contains(err.Error(), "fix prompt") {
+		t.Fatalf("improvement without a fix = %v", err)
 	}
 }
 

@@ -59,7 +59,7 @@ func TestReportRendersTrendsAndFindings(t *testing.T) {
 	analysis := &AIAnalysis{
 		Verdict: "warning", Headline: "One hotspot is growing", Confidence: "medium",
 		Findings: []AIFinding{{
-			ID: "F1", Severity: "medium", Title: "Busy worker",
+			ID: "F1", Class: "improvement", Severity: "medium", Title: "Busy worker",
 			Evidence: "cpu share 30%", Explanation: "The loop allocates per item.",
 			FixPrompt: "In worker.go, reuse the buffer.",
 			Location:  AILocation{File: "worker.go", Line: 40, Function: "app.Work"},

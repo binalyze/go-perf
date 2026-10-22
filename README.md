@@ -155,6 +155,8 @@ CURSOR_API_KEY=... CURSOR_CLOUD_ENV=owner/repo \
 go-perf analyze --run-dir ../run-current --history-dir ./history --output-html report.html
 ```
 
+The audit reads the hottest stacks in this run, opens the source, and only then classifies a validated cost as a regression, an improvement, or an expected cost. History is extra evidence when older runs exist. An expected cost is reported without a fix prompt.
+
 The script uses the Cursor SDK (`@cursor/sdk`) and needs Node.js 22.13 or
 newer. `CURSOR_API_KEY` and `CURSOR_CLOUD_ENV` come from the environment;
 neither is stored in the repo. `CURSOR_CLOUD_ENV` is the cloud environment
