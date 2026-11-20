@@ -190,6 +190,16 @@ func runApp(ctx context.Context) error {
 						Usage: "Baseline agent name for display in report (optional)",
 						Value: "",
 					},
+					&cli.StringFlag{
+						Name:  "ticket-mode",
+						Usage: "File a Jira ticket for this analyze pass: any, regression, or max. Omit to skip Jira. Requires JIRA_* env vars",
+						Value: "",
+					},
+					&cli.StringFlag{
+						Name:  "build-id",
+						Usage: "Build ID recorded on regression/max tickets for comment dedup (optional)",
+						Value: "",
+					},
 				},
 			},
 			{

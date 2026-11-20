@@ -163,6 +163,37 @@ neither is stored in the repo. `CURSOR_CLOUD_ENV` is the cloud environment
 that can read the source, named like `owner/repo`. Set `CURSOR_MODEL_PERF` or
 `CURSOR_MODEL` to choose the model. The prompt lives in `ai/prompts/analysis.md`.
 
+## 5. Jira tickets (optional)
+
+Pass `--ticket-mode` only on the post-AI `analyze` call. Omit the flag to
+skip Jira. Values:
+
+| Mode | When a ticket is filed |
+|---|---|
+| `regression` | AI verdict is `regression`, or AI is missing and a gated metric regressed |
+| `max` | At least one AI finding has severity `high` |
+| `any` | Always (pipeline smoke test; creates a new issue every time) |
+
+Requires `JIRA_EMAIL` (or `JIRA_API_USER`), `JIRA_API_TOKEN` (or
+`JIRA_API_PASSWORD`), and `JIRA_PROJECT_KEY`. `JIRA_BASE_URL` defaults to
+`https://binalyze.atlassian.net`. Missing credentials log a warning and leave
+the analyze exit code unchanged. HTTP errors are the same.
+
+```bash
+go-perf analyze \
+  --run-dir ../run-current \
+  --history-dir ./history \
+  --output-html drone-20261116T100300Z-report.html \
+  --ticket-mode regression \
+  --build-url "$BUILD_URL" \
+  --build-id "$BUILD_ID"
+```
+
+`regression` and `max` keep one open Bug per product (`perf-regression` +
+product label) and comment on later hits. `any` always creates a new Bug with
+labels `perf-any` and the product, so a Drone manual queue with
+`ticketMode=any` can prove filing without waiting for a real regression.
+
 ## Development
 
 ```bash

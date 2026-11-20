@@ -111,6 +111,8 @@ func analyzeCommand(c *cli.Context) error {
 	baselineAgentFlag := c.String("baseline-agent")
 	historyDirFlag := c.String("history-dir")
 	historySize := c.Int("history-size")
+	ticketMode := c.String("ticket-mode")
+	buildID := c.String("build-id")
 
 	if runDir == "" {
 		return fmt.Errorf("--run-dir is required")
@@ -370,11 +372,14 @@ func analyzeCommand(c *cli.Context) error {
 
 	// Generate HTML report
 	fmt.Printf("[ANALYSIS] Generating HTML report...\n")
-	if err := generateReport(runDir, outputHTML, comparison, buildURL, insights); err != nil {
-		return fmt.Errorf("failed to generate report: %w", err)
+	reportErr := generateReport(runDir, outputHTML, comparison, buildURL, insights)
+	reportPath := ""
+	if reportErr != nil {
+		fmt.Printf("[ANALYSIS] WARNING: Failed to generate report: %v\n", reportErr)
+	} else {
+		fmt.Printf("[ANALYSIS] ✓ Report generated: %s\n", outputHTML)
+		reportPath = outputHTML
 	}
-
-	fmt.Printf("[ANALYSIS] ✓ Report generated: %s\n", outputHTML)
 
 	if comparison != nil && comparison.BaselineAvailable {
 		if comparison.HasDurationRegression {
@@ -396,7 +401,32 @@ func analyzeCommand(c *cli.Context) error {
 		}
 	}
 
-	// Always exit 0 (errors are for actual failures, not regressions)
+	// ticket-mode is set only on the post-AI analyze pass. Omit the flag to
+	// skip Jira entirely (the first analyze pass does that).
+	if ticketMode != "" {
+		maybeFileJiraTicket(jiraTicketInput{
+			Mode:       ticketMode,
+			Meta:       currentMeta,
+			AI:         aiAnalysis,
+			History:    history,
+			Comparison: comparison,
+			BuildURL:   buildURL,
+			BuildID:    buildID,
+			ReportPath: reportPath,
+		}, os.Getenv, nil)
+	}
+
+	// ticket-mode=any still files when the HTML write failed and does not fail
+	// the analyze step for a missing report. Other modes keep report generation
+	// as a hard error after the Jira attempt.
+	if reportErr != nil {
+		if ticketMode == ticketModeAny {
+			return nil
+		}
+		return fmt.Errorf("failed to generate report: %w", reportErr)
+	}
+
+	// Always exit 0 (errors above are for actual failures, not regressions)
 	return nil
 }
 
