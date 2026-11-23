@@ -457,6 +457,37 @@ func TestMaybeFileJiraTicketHTTPErrorIsWarning(t *testing.T) {
 	}, func(k string) string { return env[k] }, server.Client())
 }
 
+func TestJiraErrorDetail(t *testing.T) {
+	body := []byte(`{"errorMessages":["Issue type is required"],"errors":{"issuetype":"Specify a valid issue type","customfield_10490":"Product-Feature is required."}}`)
+	got := jiraErrorDetail(body)
+	for _, want := range []string{"Issue type is required", "issuetype: Specify a valid issue type", "customfield_10490: Product-Feature is required."} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("detail %q missing %q", got, want)
+		}
+	}
+}
+
+func TestCreateIssueIncludesJiraFieldError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"errorMessages":[],"errors":{"issuetype":"Specify a valid issue type"}}`))
+	}))
+	defer server.Close()
+
+	client := newJiraClient(jiraEnv{
+		baseURL: server.URL,
+		email:   "bot@example.com",
+		token:   "secret-token",
+	}, server.Client())
+	_, err := client.createIssue("FAST", "Perf report: Drone", "nothing notable", []string{"perf-any", "drone"})
+	if err == nil || !strings.Contains(err.Error(), "HTTP 400") || !strings.Contains(err.Error(), "issuetype: Specify a valid issue type") {
+		t.Fatalf("error = %v", err)
+	}
+	if strings.Contains(err.Error(), "secret-token") {
+		t.Fatalf("token leaked into error: %v", err)
+	}
+}
+
 func TestRedactJiraSecrets(t *testing.T) {
 	got := redactJiraSecrets("token secret-token leaked", "secret-token")
 	if strings.Contains(got, "secret-token") {
