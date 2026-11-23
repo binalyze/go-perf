@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -376,7 +377,7 @@ func (c *jiraClient) findOpenIssue(projectKey, product string) (string, error) {
 		return "", err
 	}
 	if status < 200 || status >= 300 {
-		return "", fmt.Errorf("jira search returned HTTP %d", status)
+		return "", jiraStatusError("search", status, data)
 	}
 	var parsed struct {
 		Issues []jiraIssueRef `json:"issues"`
@@ -405,7 +406,7 @@ func (c *jiraClient) createIssue(projectKey, summary, description string, labels
 		return "", err
 	}
 	if status < 200 || status >= 300 {
-		return "", fmt.Errorf("jira create returned HTTP %d", status)
+		return "", jiraStatusError("create", status, data)
 	}
 	var created jiraIssueRef
 	if err := json.Unmarshal(data, &created); err != nil {
@@ -421,12 +422,12 @@ func (c *jiraClient) addComment(issueKey, text string) error {
 	payload := map[string]any{
 		"body": plainToADF(text),
 	}
-	_, status, err := c.doJSON(http.MethodPost, "/rest/api/3/issue/"+url.PathEscape(issueKey)+"/comment", payload)
+	data, status, err := c.doJSON(http.MethodPost, "/rest/api/3/issue/"+url.PathEscape(issueKey)+"/comment", payload)
 	if err != nil {
 		return err
 	}
 	if status < 200 || status >= 300 {
-		return fmt.Errorf("jira comment returned HTTP %d", status)
+		return jiraStatusError("comment", status, data)
 	}
 	return nil
 }
@@ -437,7 +438,7 @@ func (c *jiraClient) listAttachments(issueKey string) ([]string, error) {
 		return nil, err
 	}
 	if status < 200 || status >= 300 {
-		return nil, fmt.Errorf("jira get issue returned HTTP %d", status)
+		return nil, jiraStatusError("get issue", status, data)
 	}
 	var parsed struct {
 		Fields struct {
@@ -462,7 +463,7 @@ func (c *jiraClient) listCommentBodies(issueKey string) ([]string, error) {
 		return nil, err
 	}
 	if status < 200 || status >= 300 {
-		return nil, fmt.Errorf("jira list comments returned HTTP %d", status)
+		return nil, jiraStatusError("list comments", status, data)
 	}
 	var parsed struct {
 		Comments []struct {
@@ -515,9 +516,45 @@ func (c *jiraClient) attachFile(issueKey, filename, path string) error {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("jira attach returned HTTP %d: %s", resp.StatusCode, truncateForLog(string(body), 200))
+		return jiraStatusError("attach", resp.StatusCode, body)
 	}
 	return nil
+}
+
+// jiraStatusError formats an HTTP failure with the field names Jira rejected.
+// The token is redacted by the caller when this string is logged.
+func jiraStatusError(action string, status int, body []byte) error {
+	detail := jiraErrorDetail(body)
+	if detail == "" {
+		return fmt.Errorf("jira %s returned HTTP %d", action, status)
+	}
+	return fmt.Errorf("jira %s returned HTTP %d: %s", action, status, detail)
+}
+
+func jiraErrorDetail(body []byte) string {
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		return ""
+	}
+	var parsed struct {
+		ErrorMessages []string          `json:"errorMessages"`
+		Errors        map[string]string `json:"errors"`
+	}
+	if err := json.Unmarshal(body, &parsed); err == nil {
+		parts := append([]string{}, parsed.ErrorMessages...)
+		keys := make([]string, 0, len(parsed.Errors))
+		for key := range parsed.Errors {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			parts = append(parts, key+": "+parsed.Errors[key])
+		}
+		if len(parts) > 0 {
+			return truncateForLog(strings.Join(parts, "; "), 500)
+		}
+	}
+	return truncateForLog(trimmed, 300)
 }
 
 func truncateForLog(s string, n int) string {
